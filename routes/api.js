@@ -16,11 +16,13 @@ module.exports = function (app) {
 
   app.route('/api/check')
     .post((req, res) => {
-
+      console.log(req.body)
+      res.json({error: 'not implemented'})
     });
     
   app.route('/api/solve')
     .post((req, res) => {
-
+      console.log(req.body)
+      res.json({error: 'not implemented'})
     });
 };

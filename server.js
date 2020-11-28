@@ -13,6 +13,14 @@ const runner = require('./test-runner');
 
 const app = express();
 
+// Log all requests
+app.use((req, res, next) => {
+  if (process.env.NODE_ENV !== 'test') {
+    console.log(`${Date.now()}: ${req.method} ${req.path} - ${req.ip}`);
+  }
+  next();
+});
+
 app.use('/public', express.static(process.cwd() + '/public'));
 app.use(cors({origin: '*'})); //For FCC testing purposes only
 
