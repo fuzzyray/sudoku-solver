@@ -1,6 +1,18 @@
+/*
+ SudokuSolver Class for solving a sudoku puzzle. Input is an 81 character
+ string representing the initial state of the board.
+
+ Valid characters are 1-9 and period for no value.
+
+ Example:
+ '1.5..2.84..63.12.7.2..5.....9..1....8.2.3674.3.7.2..9.47...8..1..16....926914.37.'
+ */
+
+// Utility set operations for finding values
 const completedSet = new Set([1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
-// From https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
+// symmetricDifference function copied from:
+// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Set
 const symmetricDifference = (setA, setB) => {
   let _difference = new Set(setA);
   for (let elem of setB) {
@@ -19,6 +31,14 @@ const isValidValue = (valueSet, value) => {
   const validValues = symmetricDifference(values, completedSet);
   return validValues.has(value);
 };
+
+/*
+ * The sudoku Board is a 3 dimensional array comprised of 9 matrices.
+ * Each matrix represents a region of the sudoku board. Regions start
+ * at the top left of the board.
+ *
+ * All indexing is 0 based
+ */
 
 class SudokuSolver {
   constructor(puzzleString) {
@@ -40,6 +60,8 @@ class SudokuSolver {
     }
   }
 
+  // The index functions take a value between 0 - 80 and return the index
+  // for the appropriate object in the sudoku board array
   regionIndex(i) {
     return (Math.floor(i / 27) * 3) + Math.floor((i % 27) / 3) % 3;
   };
@@ -60,27 +82,8 @@ class SudokuSolver {
     return i % 9;
   }
 
-  setBoardFromString(puzzleString) {
-    if (this.isValidPuzzleString(puzzleString)) {
-      puzzleString.split('').forEach((d, i) => {
-        this.sudokuBoard[this.regionIndex(i)]
-          [this.regionRowIndex(i)]
-          [this.regionRowElementIndex(i)] = d !== '.' ? +d : null;
-      });
-    }
-  };
-
-  getStringFromBoard() {
-    const result = [];
-
-    for (let i = 0; i < 81; i++) {
-      const value = this.sudokuBoard[this.regionIndex(i)]
-        [this.regionRowIndex(i)][this.regionRowElementIndex(i)];
-      result.push(!!value ? value : '.');
-    }
-    return result.join('');
-  };
-
+  // The get functions return a specific object from the board.
+  // These are the entire board, a region, a column, or a row.
   getBoard() {
     return this.sudokuBoard;
   }
@@ -95,48 +98,51 @@ class SudokuSolver {
     const indexNum = row * 9;
     const indexRow = this.regionRowIndex(indexNum);
     const indexSquare = this.regionIndex(indexNum);
-    for (let i = 0; i < 3; i++) {
-      result.push(this.sudokuBoard[indexSquare + i][indexRow]);
+    for (let offset = 0; offset < 3; offset++) {
+      result.push(this.sudokuBoard[indexSquare + offset][indexRow]);
     }
     return result.flat();
   };
 
+  // Element operations, get, set, and remove
   getBoardColumn(column) {
     const result = [];
     for (let row = 0; row < 9; row++) {
-      const indexNum = (row * 9) + column;
+      const index = (row * 9) + column;
       result.push(
-        this.sudokuBoard[this.regionIndex(indexNum)]
-          [this.regionRowIndex(indexNum)]
-          [this.regionRowElementIndex(indexNum)]);
+        this.sudokuBoard[this.regionIndex(index)]
+          [this.regionRowIndex(index)]
+          [this.regionRowElementIndex(index)]);
     }
     return result;
   };
 
   getElement(row, column) {
-    const indexNum = (row * 9) + column;
-    return this.sudokuBoard[this.regionIndex(indexNum)]
-      [this.regionRowIndex(indexNum)]
-      [this.regionRowElementIndex(indexNum)];
+    const index = (row * 9) + column;
+    return this.sudokuBoard[this.regionIndex(index)]
+      [this.regionRowIndex(index)]
+      [this.regionRowElementIndex(index)];
   }
 
   setElement(row, column, value) {
-    const indexNum = (row * 9) + column;
+    const index = (row * 9) + column;
     if (/[1-9]/.test(value) || value === null) {
-      this.sudokuBoard[this.regionIndex(indexNum)]
-        [this.regionRowIndex(indexNum)]
-        [this.regionRowElementIndex(indexNum)] = !!value ? +value : null;
+      this.sudokuBoard[this.regionIndex(index)]
+        [this.regionRowIndex(index)]
+        [this.regionRowElementIndex(index)] = !!value ? +value : null;
     }
     return this.getElement(row, column);
   }
 
   removeElement(row, column) {
-    const indexNum = (row * 9) + column;
-    this.sudokuBoard[this.regionIndex(indexNum)]
-      [this.regionRowIndex(indexNum)]
-      [this.regionRowElementIndex(indexNum)] = null;
+    const index = (row * 9) + column;
+    this.sudokuBoard[this.regionIndex(index)]
+      [this.regionRowIndex(index)]
+      [this.regionRowElementIndex(index)] = null;
   }
 
+  // Boolean logic functions to test validity of input and
+  // placement on the board
   isValidPuzzleString(puzzleString) {
     return this.isValidLength(puzzleString) &&
       this.isValidCharacters(puzzleString);
@@ -175,26 +181,6 @@ class SudokuSolver {
     }
   }
 
-  getValidPossibleValues(row, column, removeValue = false) {
-    const elementValue = this.getElement(row, column);
-
-    if (removeValue) {
-      this.removeElement(row, column);
-    } else if (!!elementValue) {
-      return new Set([elementValue]);
-    }
-    const currentValues = [];
-    currentValues.push(this.getBoardRegion(row, column));
-    currentValues.push(this.getBoardRow(row));
-    currentValues.push(this.getBoardColumn(column));
-    const currentSet = new Set(currentValues.flat());
-    currentSet.delete(null);
-    const possibleValues = symmetricDifference(currentSet, completedSet);
-    // Restore the previous value
-    this.setElement(row, column, elementValue);
-    return possibleValues;
-  };
-
   isValidBoard() {
     for (let i = 0; i < 81; i++) {
       const row = this.boardRowIndex(i);
@@ -213,6 +199,30 @@ class SudokuSolver {
     return this.isValidBoard() && diff.size === 0;
   }
 
+  // Get a set of the valid values for a specific element at a specified
+  // row and column coordinate
+  getValidPossibleValues(row, column, removeCurrentValue = false) {
+    const elementValue = this.getElement(row, column);
+
+    if (removeCurrentValue) {
+      this.removeElement(row, column);
+    } else if (!!elementValue) {
+      return new Set([elementValue]);
+    }
+
+    const currentValues = [];
+    currentValues.push(this.getBoardRegion(row, column));
+    currentValues.push(this.getBoardRow(row));
+    currentValues.push(this.getBoardColumn(column));
+    const currentSet = new Set(currentValues.flat());
+    currentSet.delete(null);
+    const possibleValues = symmetricDifference(currentSet, completedSet);
+    // Restore the previous value
+    this.setElement(row, column, elementValue);
+    return possibleValues;
+  };
+
+  // Solve the current board, return a string representing the solved board
   solve() {
     if (this.isBoardSolved()) {
       return this.getStringFromBoard();
@@ -238,7 +248,6 @@ class SudokuSolver {
           leastRowDiff.validValues = rowDiff;
         }
       }
-      //console.log(leastRowDiff);
       let leastValueDiff = {
         row: leastRowDiff.row,
         column: 0,
@@ -256,7 +265,6 @@ class SudokuSolver {
           }
         }
       }
-      //console.log(leastValueDiff);
       let setValue;
       if (leastValueDiff.validValues.length > 0) {
         setValue = leastValueDiff.validValues.pop();
@@ -274,23 +282,44 @@ class SudokuSolver {
           attempt = attemptStack.pop();
           if (attempt.values.length > 0) break;
         }
-        //console.log('backtrack to attempt:', attempt);
         this.setBoardFromString(attempt.string);
         attempt.setValue = attempt.values.pop();
         this.setElement(attempt.row, attempt.column, attempt.setValue);
         attemptStack.push(attempt);
       }
+      if (attemptCount === 100000) return 'taking too long to solve';
+
       console.log('Count:', attemptCount, 'Stack:', attemptStack.length,
         this + '');
-      if (attemptCount === 100000) return 'taking too long to solve';
     }
     return this.getStringFromBoard();
   }
 
+  // Set the board from a string and get a string from the board
+  setBoardFromString(puzzleString) {
+    if (this.isValidPuzzleString(puzzleString)) {
+      puzzleString.split('').forEach((d, i) => {
+        this.sudokuBoard[this.regionIndex(i)]
+          [this.regionRowIndex(i)]
+          [this.regionRowElementIndex(i)] = d !== '.' ? +d : null;
+      });
+    }
+  };
+
+  getStringFromBoard() {
+    const result = [];
+    for (let index = 0; index < 81; index++) {
+      const value = this.sudokuBoard[this.regionIndex(index)]
+        [this.regionRowIndex(index)]
+        [this.regionRowElementIndex(index)];
+      result.push(!!value ? value : '.');
+    }
+    return result.join('');
+  };
+
   toString() {
     return this.getStringFromBoard();
   }
-
 }
 
 module.exports = SudokuSolver;
