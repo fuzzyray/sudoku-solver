@@ -224,73 +224,85 @@ class SudokuSolver {
 
   // Solve the current board, return a string representing the solved board
   solve() {
-    if (this.isBoardSolved()) {
-      return this.getStringFromBoard();
-    }
 
+    // Verify that the initial state is a valid board
     if (!this.isValidBoard()) {
       return 'invalid board';
     }
 
+    // Keep a stack of our attempts to solve, so we can backtrack as necessary
     const attemptStack = [];
     let attemptCount = 0;
 
     while (!this.isBoardSolved()) {
       attemptCount++;
-      let leastRowDiff = {row: null, size: 11, validValues: new Set()};
-      for (let row = 0; row < 9; row++) {
-        const rowDiff = symmetricDifference(completedSet,
-          this.getBoardRow(row));
-        if (!rowDiff.size) continue;
-        if (rowDiff.size < leastRowDiff.size) {
-          leastRowDiff.row = row;
-          leastRowDiff.size = rowDiff.size;
-          leastRowDiff.validValues = rowDiff;
+
+      // find the elements with the least number of possible values
+      // maximum number of valid values is 9
+      const elements = [];
+      let numberOfValidValues = 9;
+      let currentValidValues = new Set();
+      for (let index = 0; index < 81; index += 1) {
+        const row = this.boardRowIndex(index);
+        const column = this.boardColumnIndex(index);
+        const elementValue = this.getElement(row, column);
+        if (!!elementValue) continue;
+        currentValidValues = this.getValidPossibleValues(row, column);
+        if (currentValidValues.size <= numberOfValidValues) {
+          numberOfValidValues = currentValidValues.size;
+          while (elements.length && elements[elements.length - 1].values.size >
+          numberOfValidValues) {
+            elements.pop();
+          }
+          elements.push({
+            row: row,
+            column: column,
+            values: [...currentValidValues],
+          });
         }
       }
-      let leastValueDiff = {
-        row: leastRowDiff.row,
-        column: 0,
-        size: 11,
-        validValues: new Set(),
-      };
-      for (let column = 0; column < 9; column++) {
-        let values = new Set();
-        if (!this.getElement(leastRowDiff.row, column)) {
-          values = this.getValidPossibleValues(leastRowDiff.row, column);
-          if (values.size < leastValueDiff.size) {
-            leastValueDiff.column = column;
-            leastValueDiff.size = values.size;
-            leastValueDiff.validValues = [...values];
+
+      // Set an element to a valid value selected randomly
+      let element = elements[Math.floor(Math.random() * elements.length)];
+
+      /*
+       The solving algorithm is O(n!) due to the worst case of having to
+       potentially backtrack for every time we have more than one valid value.
+       This logic seems to avoid the worse cases by looking at how far we are
+       in solving the puzzle. If we are less than half, then we go back to
+       the first change that had multiple values available. Otherwise,
+       we backtrack to the most recent change that had multiple values.
+       */
+      if (element.values.length === 0) {
+        if (attemptStack.length <=40) {
+          for (let i = 0; i < attemptStack.length; i++) {
+            element = attemptStack[i];
+            if (element.values.length > 0) {
+              attemptStack.splice(i);
+              break;
+            }
+          }
+        } else {
+          while (attemptStack.length > 0) {
+            element = attemptStack.pop()
+            if (element.values.length > 0) break;
           }
         }
+        this.setBoardFromString(element.string);
       }
-      let setValue;
-      if (leastValueDiff.validValues.length > 0) {
-        setValue = leastValueDiff.validValues.pop();
-        this.setElement(leastValueDiff.row, leastValueDiff.column, setValue);
-        attemptStack.push({
-          string: this.getStringFromBoard(),
-          row: leastValueDiff.row,
-          column: leastValueDiff.column,
-          setValue: setValue,
-          values: leastValueDiff.validValues,
-        });
-      } else {
-        let attempt;
-        while (attemptStack.length > 0) {
-          attempt = attemptStack.pop();
-          if (attempt.values.length > 0) break;
-        }
-        this.setBoardFromString(attempt.string);
-        attempt.setValue = attempt.values.pop();
-        this.setElement(attempt.row, attempt.column, attempt.setValue);
-        attemptStack.push(attempt);
-      }
-      if (attemptCount === 100000) return 'taking too long to solve';
+      const valueIndex = Math.floor(Math.random() * element.values.length);
+      element.setValue = element.values[valueIndex];
+      element.values.splice(valueIndex, 1);
+      this.setElement(element.row, element.column, element.setValue);
+      element.string = this.getStringFromBoard();
+      attemptStack.push(element);
 
-      console.log('Count:', attemptCount, 'Stack:', attemptStack.length,
-        this + '');
+      if (attemptCount === 100000) {
+        console.log(attemptStack);
+        return 'taking too long to solve';
+      }
+      // console.log('Count:', attemptCount, 'Stack:', attemptStack.length,
+      //   this + '');
     }
     return this.getStringFromBoard();
   }
