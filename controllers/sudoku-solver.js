@@ -41,7 +41,7 @@ const isValidValue = (valueSet, value) => {
  */
 
 class SudokuSolver {
-  constructor(puzzleString) {
+  constructor(puzzleString, verbose = false) {
     this.sudokuBoard =
       [
         [[null, null, null], [null, null, null], [null, null, null]],
@@ -58,6 +58,7 @@ class SudokuSolver {
     if (!!puzzleString) {
       this.setBoardFromString(puzzleString);
     }
+    this.verbose = verbose;
   }
 
   // The index functions take a value between 0 - 80 and return the index
@@ -274,7 +275,7 @@ class SudokuSolver {
        we backtrack to the most recent change that had multiple values.
        */
       if (element.values.length === 0) {
-        if (attemptStack.length <=40) {
+        if (attemptStack.length <= 40) {
           for (let i = 0; i < attemptStack.length; i++) {
             element = attemptStack[i];
             if (element.values.length > 0) {
@@ -284,7 +285,7 @@ class SudokuSolver {
           }
         } else {
           while (attemptStack.length > 0) {
-            element = attemptStack.pop()
+            element = attemptStack.pop();
             if (element.values.length > 0) break;
           }
         }
@@ -297,12 +298,14 @@ class SudokuSolver {
       element.string = this.getStringFromBoard();
       attemptStack.push(element);
 
-      if (attemptCount === 100000) {
-        console.log(attemptStack);
-        return 'taking too long to solve';
+      if (attemptCount === 1000) {
+        if (this.verbose) console.log(attemptStack);
+        return 'timeout attempting to solve';
       }
-      // console.log('Count:', attemptCount, 'Stack:', attemptStack.length,
-      //   this + '');
+      if (this.verbose) {
+        console.log('Count:', attemptCount, 'Stack:', attemptStack.length,
+          this + '');
+      }
     }
     return this.getStringFromBoard();
   }
