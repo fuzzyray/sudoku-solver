@@ -82,7 +82,7 @@ module.exports = function(app) {
         if (solver.isValidPuzzleString(puzzle)) {
           solver.setBoardFromString(puzzle);
           const solution = solver.solve();
-          const solutionErrorRegEx = /timeout|invalid/;
+          const solutionErrorRegEx = /timeout|invalid|Unsolvable/;
           res.json(solutionErrorRegEx.test(solution)
             ? {error: 'Puzzle cannot be solved'}
             : {solution: solution});
