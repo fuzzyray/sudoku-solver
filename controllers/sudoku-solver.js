@@ -251,8 +251,8 @@ class SudokuSolver {
         currentValidValues = this.getValidPossibleValues(row, column);
         if (currentValidValues.size <= numberOfValidValues) {
           numberOfValidValues = currentValidValues.size;
-          while (elements.length && elements[elements.length - 1].values.size >
-          numberOfValidValues) {
+          while (elements.length &&
+          elements[elements.length - 1].values.length > numberOfValidValues) {
             elements.pop();
           }
           elements.push({
