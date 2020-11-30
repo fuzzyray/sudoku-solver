@@ -58,14 +58,15 @@ module.exports = function(app) {
         // Current behavior is return a conflict regardless of passed
         // value. Do we return invalid coordinate or just remove the existing
         // value and check?
-        if (!solver.isValidRegionPlacement(row, column, +value)) {
-          conflicts.push('region');
+        // Example Solution seems to basically be undefined
+        if (!solver.isValidRowPlacement(row, column, +value)) {
+          conflicts.push('row');
         }
         if (!solver.isValidColumnPlacement(row, column, +value)) {
           conflicts.push('column');
         }
-        if (!solver.isValidRowPlacement(row, column, +value)) {
-          conflicts.push('row');
+        if (!solver.isValidRegionPlacement(row, column, +value)) {
+          conflicts.push('region');
         }
         if (!conflicts.length) {
           res.json({valid: true});
