@@ -41,7 +41,7 @@ const isValidValue = (valueSet, value) => {
  */
 
 class SudokuSolver {
-  constructor(puzzleString, verbose = false) {
+  constructor(puzzleString = null, verbose = false) {
     this.sudokuBoard =
       [
         [[null, null, null], [null, null, null], [null, null, null]],
@@ -266,31 +266,21 @@ class SudokuSolver {
       // Set an element to a valid value selected randomly
       let element = elements[Math.floor(Math.random() * elements.length)];
 
-      /*
-       The solving algorithm is O(n!) due to the worst case of having to
-       potentially backtrack for every time we have more than one valid value.
-       This logic seems to avoid the worse cases by looking at how far we are
-       in solving the puzzle. If we are less than half, then we go back to
-       the first change that had multiple values available. Otherwise,
-       we backtrack to the most recent change that had multiple values.
-       */
-      if (element.values.length === 0) {
-        if (attemptStack.length <= 40) {
-          for (let i = 0; i < attemptStack.length; i++) {
-            element = attemptStack[i];
-            if (element.values.length > 0) {
-              attemptStack.splice(i);
-              break;
-            }
-          }
-        } else {
+      // if we have no valid values, backtrack
+      if (element.values.length === 0 && attemptStack.length > 0) {
           while (attemptStack.length > 0) {
             element = attemptStack.pop();
             if (element.values.length > 0) break;
           }
-        }
         this.setBoardFromString(element.string);
       }
+
+      // If we have no valid values and stack is empty, puzzle is unsolvable
+      if (element.values.length === 0 && attemptStack.length === 0) {
+        if (this.verbose) console.log(element)
+        return "Unsolvable puzzle layout"
+      }
+
       const valueIndex = Math.floor(Math.random() * element.values.length);
       element.setValue = element.values[valueIndex];
       element.values.splice(valueIndex, 1);
@@ -298,7 +288,7 @@ class SudokuSolver {
       element.string = this.getStringFromBoard();
       attemptStack.push(element);
 
-      if (attemptCount === 1000) {
+      if (attemptCount === 5000) {
         if (this.verbose) console.log(attemptStack);
         return 'timeout attempting to solve';
       }
