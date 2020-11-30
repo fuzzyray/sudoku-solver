@@ -240,7 +240,7 @@ class SudokuSolver {
 
       // find the elements with the least number of possible values
       // maximum number of valid values is 9
-      const elements = [];
+      let elements = [];
       let numberOfValidValues = 9;
       let currentValidValues = new Set();
       for (let index = 0; index < 81; index += 1) {
@@ -251,10 +251,9 @@ class SudokuSolver {
         currentValidValues = this.getValidPossibleValues(row, column);
         if (currentValidValues.size <= numberOfValidValues) {
           numberOfValidValues = currentValidValues.size;
-          while (elements.length &&
-          elements[elements.length - 1].values.length > numberOfValidValues) {
-            elements.pop();
-          }
+          elements = elements.filter(e => {
+            return e.values.length === numberOfValidValues
+          })
           elements.push({
             row: row,
             column: column,
@@ -268,17 +267,17 @@ class SudokuSolver {
 
       // if we have no valid values, backtrack
       if (element.values.length === 0 && attemptStack.length > 0) {
-          while (attemptStack.length > 0) {
-            element = attemptStack.pop();
-            if (element.values.length > 0) break;
-          }
+        while (attemptStack.length > 0) {
+          element = attemptStack.pop();
+          if (element.values.length > 0) break;
+        }
         this.setBoardFromString(element.string);
       }
 
       // If we have no valid values and stack is empty, puzzle is unsolvable
       if (element.values.length === 0 && attemptStack.length === 0) {
-        if (this.verbose) console.log(element)
-        return "Unsolvable puzzle layout"
+        if (this.verbose) console.log(element);
+        return 'Unsolvable puzzle layout';
       }
 
       const valueIndex = Math.floor(Math.random() * element.values.length);
