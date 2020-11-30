@@ -38,10 +38,24 @@ const isValidValue = (valueSet, value) => {
  * at the top left of the board.
  *
  * All indexing is 0 based
+ *
+ * Solving Algorithm is:
+ * find a cell with the least amount of valid values.
+ * If the cell has no valid values, backtrack to the previous move with at
+ * least one valid value and continue.
+ * If there are no previous moves with valid values, the puzzle layout is
+ * unsolvable.
+ * If there is a valid value, set the cell to a valid value.
+ * repeat until the puzzle is either solved, or unsolvable.
+ *
+ * The deterministic flag determines if we use .pop() to get the current cell
+ * and value or if we randomly pick a cell and value
+ *
+ * The verbose flag logs the state of the solving process
  */
 
 class SudokuSolver {
-  constructor(puzzleString = null, verbose = false) {
+  constructor(puzzleString = null, deterministic = false, verbose = false) {
     this.sudokuBoard =
       [
         [[null, null, null], [null, null, null], [null, null, null]],
@@ -58,6 +72,7 @@ class SudokuSolver {
     if (!!puzzleString) {
       this.setBoardFromString(puzzleString);
     }
+    this.deterministic = deterministic;
     this.verbose = verbose;
   }
 
@@ -71,7 +86,7 @@ class SudokuSolver {
     return Math.floor((i % 27) / 9);
   };
 
-  regionRowElementIndex(i) {
+  regionRowCellIndex(i) {
     return (i % 9) % 3;
   };
 
@@ -105,7 +120,7 @@ class SudokuSolver {
     return result.flat();
   };
 
-  // Element operations, get, set, and remove
+  // Cell operations, get, set, and remove
   getBoardColumn(column) {
     const result = [];
     for (let row = 0; row < 9; row++) {
@@ -113,33 +128,33 @@ class SudokuSolver {
       result.push(
         this.sudokuBoard[this.regionIndex(index)]
           [this.regionRowIndex(index)]
-          [this.regionRowElementIndex(index)]);
+          [this.regionRowCellIndex(index)]);
     }
     return result;
   };
 
-  getElement(row, column) {
+  getCell(row, column) {
     const index = (row * 9) + column;
     return this.sudokuBoard[this.regionIndex(index)]
       [this.regionRowIndex(index)]
-      [this.regionRowElementIndex(index)];
+      [this.regionRowCellIndex(index)];
   }
 
-  setElement(row, column, value) {
+  setCell(row, column, value) {
     const index = (row * 9) + column;
     if (/[1-9]/.test(value) || value === null) {
       this.sudokuBoard[this.regionIndex(index)]
         [this.regionRowIndex(index)]
-        [this.regionRowElementIndex(index)] = !!value ? +value : null;
+        [this.regionRowCellIndex(index)] = !!value ? +value : null;
     }
-    return this.getElement(row, column);
+    return this.getCell(row, column);
   }
 
-  removeElement(row, column) {
+  removeCell(row, column) {
     const index = (row * 9) + column;
     this.sudokuBoard[this.regionIndex(index)]
       [this.regionRowIndex(index)]
-      [this.regionRowElementIndex(index)] = null;
+      [this.regionRowCellIndex(index)] = null;
   }
 
   // Boolean logic functions to test validity of input and
@@ -159,7 +174,7 @@ class SudokuSolver {
   }
 
   isValidRowPlacement(row, column, value) {
-    if (this.getElement(row, column)) {
+    if (this.getCell(row, column)) {
       return false;
     } else {
       return isValidValue(this.getBoardRow(row), value);
@@ -167,7 +182,7 @@ class SudokuSolver {
   }
 
   isValidColumnPlacement(row, column, value) {
-    if (this.getElement(row, column)) {
+    if (this.getCell(row, column)) {
       return false;
     } else {
       return isValidValue(this.getBoardColumn(column), value);
@@ -175,7 +190,7 @@ class SudokuSolver {
   }
 
   isValidRegionPlacement(row, column, value) {
-    if (this.getElement(row, column)) {
+    if (this.getCell(row, column)) {
       return false;
     } else {
       return isValidValue(this.getBoardRegion(row, column), value);
@@ -186,9 +201,9 @@ class SudokuSolver {
     for (let i = 0; i < 81; i++) {
       const row = this.boardRowIndex(i);
       const column = this.boardColumnIndex(i);
-      const elementValue = this.getElement(row, column);
+      const cellValue = this.getCell(row, column);
       const validValues = this.getValidPossibleValues(row, column, true);
-      if (elementValue && !validValues.has(elementValue)) {
+      if (cellValue && !validValues.has(cellValue)) {
         return false;
       }
     }
@@ -200,15 +215,15 @@ class SudokuSolver {
     return this.isValidBoard() && diff.size === 0;
   }
 
-  // Get a set of the valid values for a specific element at a specified
+  // Get a set of the valid values for a specific cell at a specified
   // row and column coordinate
   getValidPossibleValues(row, column, removeCurrentValue = false) {
-    const elementValue = this.getElement(row, column);
+    const cellValue = this.getCell(row, column);
 
     if (removeCurrentValue) {
-      this.removeElement(row, column);
-    } else if (!!elementValue) {
-      return new Set([elementValue]);
+      this.removeCell(row, column);
+    } else if (!!cellValue) {
+      return new Set([cellValue]);
     }
 
     const currentValues = [];
@@ -219,7 +234,7 @@ class SudokuSolver {
     currentSet.delete(null);
     const possibleValues = symmetricDifference(currentSet, completedSet);
     // Restore the previous value
-    this.setElement(row, column, elementValue);
+    this.setCell(row, column, cellValue);
     return possibleValues;
   };
 
@@ -238,23 +253,23 @@ class SudokuSolver {
     while (!this.isBoardSolved()) {
       attemptCount++;
 
-      // find the elements with the least number of possible values
+      // find the cells with the least number of possible values
       // maximum number of valid values is 9
-      let elements = [];
+      let cells = [];
       let numberOfValidValues = 9;
       let currentValidValues = new Set();
       for (let index = 0; index < 81; index += 1) {
         const row = this.boardRowIndex(index);
         const column = this.boardColumnIndex(index);
-        const elementValue = this.getElement(row, column);
-        if (!!elementValue) continue;
+        const cellValue = this.getCell(row, column);
+        if (!!cellValue) continue;
         currentValidValues = this.getValidPossibleValues(row, column);
         if (currentValidValues.size <= numberOfValidValues) {
           numberOfValidValues = currentValidValues.size;
-          elements = elements.filter(e => {
-            return e.values.length === numberOfValidValues
-          })
-          elements.push({
+          cells = cells.filter(e => {
+            return e.values.length === numberOfValidValues;
+          });
+          cells.push({
             row: row,
             column: column,
             values: [...currentValidValues],
@@ -262,30 +277,40 @@ class SudokuSolver {
         }
       }
 
-      // Set an element to a valid value selected randomly
-      let element = elements[Math.floor(Math.random() * elements.length)];
+      // Set the cell to a valid cell
+      let cell;
+      if (this.deterministic) {
+        cell = cells.pop();
+      } else {
+        cell = cells[Math.floor(Math.random() * cells.length)];
+      }
 
       // if we have no valid values, backtrack
-      if (element.values.length === 0 && attemptStack.length > 0) {
+      if (cell.values.length === 0 && attemptStack.length > 0) {
         while (attemptStack.length > 0) {
-          element = attemptStack.pop();
-          if (element.values.length > 0) break;
+          cell = attemptStack.pop();
+          if (cell.values.length > 0) break;
         }
-        this.setBoardFromString(element.string);
+        this.setBoardFromString(cell.string);
       }
 
       // If we have no valid values and stack is empty, puzzle is unsolvable
-      if (element.values.length === 0 && attemptStack.length === 0) {
-        if (this.verbose) console.log(element);
+      if (cell.values.length === 0 && attemptStack.length === 0) {
+        if (this.verbose) console.log(cell);
         return 'Unsolvable puzzle layout';
       }
 
-      const valueIndex = Math.floor(Math.random() * element.values.length);
-      element.setValue = element.values[valueIndex];
-      element.values.splice(valueIndex, 1);
-      this.setElement(element.row, element.column, element.setValue);
-      element.string = this.getStringFromBoard();
-      attemptStack.push(element);
+      let valueIndex;
+      if (this.deterministic) {
+        cell.setValue = cell.values.pop();
+      } else {
+        valueIndex = Math.floor(Math.random() * cell.values.length);
+        cell.setValue = cell.values[valueIndex];
+        cell.values.splice(valueIndex, 1);
+      }
+      this.setCell(cell.row, cell.column, cell.setValue);
+      cell.string = this.getStringFromBoard();
+      attemptStack.push(cell);
 
       if (attemptCount === 5000) {
         if (this.verbose) console.log(attemptStack);
@@ -305,7 +330,7 @@ class SudokuSolver {
       puzzleString.split('').forEach((d, i) => {
         this.sudokuBoard[this.regionIndex(i)]
           [this.regionRowIndex(i)]
-          [this.regionRowElementIndex(i)] = d !== '.' ? +d : null;
+          [this.regionRowCellIndex(i)] = d !== '.' ? +d : null;
       });
     }
   };
@@ -315,7 +340,7 @@ class SudokuSolver {
     for (let index = 0; index < 81; index++) {
       const value = this.sudokuBoard[this.regionIndex(index)]
         [this.regionRowIndex(index)]
-        [this.regionRowElementIndex(index)];
+        [this.regionRowCellIndex(index)];
       result.push(!!value ? value : '.');
     }
     return result.join('');
