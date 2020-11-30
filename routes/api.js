@@ -48,31 +48,29 @@ module.exports = function(app) {
         res.json({error: 'Invalid coordinate'});
       } else if (!/[1-9]/.test(value)) {
         res.json({error: 'Invalid value'});
+      } else if (!solver.isValidPuzzleString(puzzle)) {
+        res.json(getPuzzleStringError(puzzle));
       } else {
-        if (solver.isValidPuzzleString(puzzle)) {
-          solver.setBoardFromString(puzzle);
-          const [row, column] = convertCoordinate(coordinate);
-          const conflicts = [];
-          // TODO: What do we do if coordinate has an existing value?
-          // Current behavior is return a conflict regardless of passed
-          // value. Do we return invalid coordinate or just remove the existing
-          // value and check?
-          if (!solver.isValidRegionPlacement(row, column, +value)) {
-            conflicts.push('region');
-          }
-          if (!solver.isValidColumnPlacement(row, column, +value)) {
-            conflicts.push('column');
-          }
-          if (!solver.isValidRowPlacement(row, column, +value)) {
-            conflicts.push('row');
-          }
-          if (!conflicts.length) {
-            res.json({valid: true});
-          } else {
-            res.json({valid: false, conflicts: conflicts});
-          }
+        solver.setBoardFromString(puzzle);
+        const [row, column] = convertCoordinate(coordinate);
+        const conflicts = [];
+        // TODO: What do we do if coordinate has an existing value?
+        // Current behavior is return a conflict regardless of passed
+        // value. Do we return invalid coordinate or just remove the existing
+        // value and check?
+        if (!solver.isValidRegionPlacement(row, column, +value)) {
+          conflicts.push('region');
+        }
+        if (!solver.isValidColumnPlacement(row, column, +value)) {
+          conflicts.push('column');
+        }
+        if (!solver.isValidRowPlacement(row, column, +value)) {
+          conflicts.push('row');
+        }
+        if (!conflicts.length) {
+          res.json({valid: true});
         } else {
-          res.json(getPuzzleStringError(puzzle));
+          res.json({valid: false, conflicts: conflicts});
         }
       }
     });
