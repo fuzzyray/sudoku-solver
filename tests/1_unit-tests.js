@@ -21,7 +21,8 @@ suite('UnitTests', () => {
   suite('Function validate()', () => {
     test('Valid Characters, length of 81', (done) => {
       const input = '..9..5.1.85.4....2432......1...69.83.9.....6.62.71...9......1945....4.37.4.3..6..';
-      assert.fail('Test not implemented');
+      assert.isTrue(solver.isValidPuzzleString(input),
+        'input string is not a valid puzzle string');
       done();
     });
 
@@ -31,8 +32,8 @@ suite('UnitTests', () => {
       'Invalid characters (anything other than "1-9" or "."") are not accepted',
       (done) => {
         const input = '..X..5.1.85.4....2432.HI...1...69.83.9.....6.62.71...9......1945....4.37.4.3..6..';
-        const error = 'Invalid characters in puzzle';
-        assert.fail('Test not implemented');
+        assert.isFalse(solver.isValidCharacters(input),
+          'input string is composed of valid characters');
         done();
       });
 
@@ -40,8 +41,10 @@ suite('UnitTests', () => {
     test('Shows an error for puzzles that are not 81 numbers long', done => {
       const shortStr = '83.9.....6.62.71...9......1945....4.37.4.3..6..';
       const longStr = '..9..5.1.85.4....2432......1...69.83.9.....6.62.71...9......1945....4.37.4.3..6...';
-      const errorMsg = 'Expected puzzle to be 81 characters long';
-      assert.fail('Test not implemented');
+      assert.isFalse(
+        solver.isValidLength(shortStr, 'input string is 81 characters'));
+      assert.isFalse(
+        solver.isValidLength(longStr, 'input string is 81 characters'));
       done();
     });
   });
@@ -52,7 +55,9 @@ suite('UnitTests', () => {
       const row = 0;
       const col = 0;
       const value = 3;
-      assert.fail('Test not implemented');
+      solver.setBoardFromString(input);
+      assert.isTrue(solver.isValidRowPlacement(row, col, value),
+        'Invalid row placement');
       done();
     });
 
@@ -61,7 +66,9 @@ suite('UnitTests', () => {
       const row = 0;
       const col = 0;
       const value = 9;
-      assert.fail('Test not implemented');
+      solver.setBoardFromString(input);
+      assert.isFalse(solver.isValidRowPlacement(row, col, value),
+        'Valid row placement for value');
       done();
     });
 
@@ -73,7 +80,9 @@ suite('UnitTests', () => {
       const row = 0;
       const col = 0;
       const value = 3;
-      assert.fail('Test not implemented');
+      solver.setBoardFromString(input);
+      assert.isTrue(solver.isValidColumnPlacement(row, col, value),
+        'Invalid column placement');
       done();
     });
 
@@ -81,8 +90,10 @@ suite('UnitTests', () => {
       const input = '..9..5.1.85.4....2432......1...69.83.9.....6.62.71...9......1945....4.37.4.3..6..';
       const row = 0;
       const col = 0;
-      const value = 9;
-      assert.fail('Test not implemented');
+      const value = 1;
+      solver.setBoardFromString(input);
+      assert.isFalse(solver.isValidColumnPlacement(row, col, value),
+        'Valid column placement for value');
       done();
     });
 
@@ -94,7 +105,9 @@ suite('UnitTests', () => {
       const row = 4;
       const col = 4;
       const value = 3;
-      assert.fail('Test not implemented');
+      solver.setBoardFromString(input);
+      assert.isTrue(solver.isValidRegionPlacement(row, col, value),
+        'Invalid region placement');
       done();
     });
 
@@ -103,7 +116,9 @@ suite('UnitTests', () => {
       const row = 4;
       const col = 4;
       const value = 7;
-      assert.fail('Test not implemented');
+      solver.setBoardFromString(input);
+      assert.isFalse(solver.isValidRegionPlacement(row, col, value),
+        'Valid region placement');
       done();
     });
 
@@ -113,21 +128,27 @@ suite('UnitTests', () => {
     // Valid complete puzzles pass
     test('Valid puzzles pass', done => {
       const input = '769235418851496372432178956174569283395842761628713549283657194516924837947381625';
-      assert.fail('Test not implemented');
+      const answer = input
+      solver.setBoardFromString(input);
+      assert.strictEqual(solver.solve(), answer, 'Answer not equal to expected answer');
       done();
     });
 
     // Invalid complete puzzles fail
     test('Invalid puzzles fail', done => {
       const input = '779235418851496372432178956174569283395842761628713549283657194516924837947381625';
-      assert.fail('Test not implemented');
+      const error = 'invalid board'
+      solver.setBoardFromString(input);
+      assert.strictEqual(solver.solve(), error, 'Expected invalid board');
       done();
     });
 
     // Returns the expected solution for a valid, incomplete puzzle
     test('Returns the expected solution for an incomplete puzzle', done => {
       const input = '..9..5.1.85.4....2432......1...69.83.9.....6.62.71...9......1945....4.37.4.3..6..';
-      assert.fail('Test not implemented');
+      const answer = '769235418851496372432178956174569283395842761628713549283657194516924837947381625';
+      solver.setBoardFromString(input);
+      assert.strictEqual(solver.solve(), answer, 'Answer not equal to expected answer')
       done();
     });
   });
