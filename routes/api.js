@@ -19,9 +19,9 @@ module.exports = function(app) {
   // SudokuSolver class
   // returns: [row, col]
   const convertCoordinate = (coordinate) => {
-    const result = coordinate.split('').reverse();
-    result[0] = +result[0] - 1;
-    result[1] = result[1].codePointAt(0) - 'A'.codePointAt(0);
+    const result = coordinate.split('');
+    result[0] = result[0].codePointAt(0) - 'A'.codePointAt(0);
+    result[1] = +result[1] - 1;
     return result;
   };
 
@@ -44,7 +44,7 @@ module.exports = function(app) {
       const {puzzle = null, coordinate = null, value = null} = req.body;
       if (!puzzle || !coordinate || !value) {
         res.json({error: 'Required field(s) missing'});
-      } else if (!/[A-I][1-9]/.test(coordinate)) {
+      } else if (!/^[A-I][1-9]$/.test(coordinate)) {
         res.json({error: 'Invalid coordinate'});
       } else if (!/[1-9]/.test(value)) {
         res.json({error: 'Invalid value'});
@@ -71,7 +71,7 @@ module.exports = function(app) {
         if (!conflicts.length) {
           res.json({valid: true});
         } else {
-          res.json({valid: false, conflicts: conflicts});
+          res.json({valid: false, conflict: conflicts});
         }
       }
     });
