@@ -46,7 +46,7 @@ module.exports = function(app) {
         res.json({error: 'Required field(s) missing'});
       } else if (!/^[A-I][1-9]$/.test(coordinate)) {
         res.json({error: 'Invalid coordinate'});
-      } else if (!/[1-9]/.test(value)) {
+      } else if (!/^[1-9]$/.test(value)) {
         res.json({error: 'Invalid value'});
       } else if (!solver.isValidPuzzleString(puzzle)) {
         res.json(getPuzzleStringError(puzzle));
