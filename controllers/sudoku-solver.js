@@ -52,7 +52,7 @@ const isValidValue = (valueSet, value) => {
  * and value or if we randomly pick a cell and value
  *
  * The verbose flag logs the state of the solving process
- */
+*/
 
 class SudokuSolver {
   constructor(puzzleString = null, deterministic = false, verbose = false) {
@@ -120,7 +120,6 @@ class SudokuSolver {
     return result.flat();
   };
 
-  // Cell operations, get, set, and remove
   getBoardColumn(column) {
     const result = [];
     for (let row = 0; row < 9; row++) {
@@ -133,6 +132,7 @@ class SudokuSolver {
     return result;
   };
 
+  // Cell operations, get, set, and remove
   getCell(row, column) {
     const index = (row * 9) + column;
     return this.sudokuBoard[this.regionIndex(index)]
