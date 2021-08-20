@@ -75,7 +75,7 @@ class SudokuSolver {
     }
   }
 
-  // getStringFromBoard returns a string representing the current state of the sudokuBoard
+  // getStringFromBoard/toString returns a string representing the current state of the sudokuBoard
   getStringFromBoard() {
     const result = [];
     for (let row = 0; row < 9; row++) {
@@ -91,10 +91,12 @@ class SudokuSolver {
     return this.getStringFromBoard();
   }
 
+  // getCell returns the value of a cell at a row and column position
   getCell(row, column) {
     return this.sudokuBoard[row][column];
   }
 
+  // setCell sets a cell value, if the value is not valid, it does nothing
   setCell(row, column, value) {
     if (/[0-9]/.test(value)) {
       this.sudokuBoard[row][column] = +value;
@@ -102,6 +104,7 @@ class SudokuSolver {
     return this.getCell(row, column);
   }
 
+  // removeCell sets the cell value to 0 which represents an empty cell
   removeCell(row, column) {
     this.sudokuBoard[row][column] = 0;
   }
@@ -133,6 +136,8 @@ class SudokuSolver {
     return result;
   }
 
+  // getValidPossibleValues returns the available valid values for a cell
+  // If the cell already contains a value it returns that value, unless removeCurrentValue is set to true
   getValidPossibleValues(row, column, removeCurrentValue = false) {
     const cellValue = this.getCell(row, column);
 
@@ -212,13 +217,19 @@ class SudokuSolver {
     return true;
   }
 
+  // isBoardSolved returns true if the board is a solved sudoku
   isBoardSolved() {
     const diff = symmetricDifference(this.sudokuBoard.flat(), completedSet);
     return this.isValidBoard() && diff.size === 0;
   }
 
-// Solve the current board, return a string representing the solved board
+// Solve the current board, returns a string representing the solved board or an error message
+// Error messages:
+//  'invalid board'
+//  'Unsolvable puzzle layout'
   solve() {
+
+    // getCellWithLeastValidValues gets the first cell with the minimum number of valid values available
     const getCellWithLeastValidValues = () => {
       const result = {
         'row': 9,
@@ -243,14 +254,17 @@ class SudokuSolver {
       return result;
     };
 
-    const heuristic_solver = (depth = 1) => {
+    // heuristic_solver is a recursive brute force solver that uses heuristics to solve the puzzle
+    // The heuristic is to get the first cell with the least number of valid values available and
+    // to only try the valid values for that cell
+    const heuristic_solver = () => {
       if (this.isBoardSolved()) {
         return true;
       }
       const cell = getCellWithLeastValidValues();
       for (let i = 0; i < cell.values.length; i++) {
         this.setCell(cell.row, cell.column, cell.values[i]);
-        if (heuristic_solver(depth + 1)) {
+        if (heuristic_solver()) {
           return true;
         }
         this.removeCell(cell.row, cell.column);
@@ -262,6 +276,8 @@ class SudokuSolver {
     if (!this.isValidBoard()) {
       return 'invalid board';
     }
+
+    // Use the heuristic solver
     if (heuristic_solver()) {
       return this.getStringFromBoard();
     } else {
